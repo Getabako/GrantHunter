@@ -1,0 +1,78 @@
+# Grant Hunter
+
+自分の事業と生活に関係ある補助金・助成金を **毎日自動でリサーチして提案** し、「出す」と決めたら **公式の書式を取り寄せて書類を作成し、1フォルダにまとめる** ところまでを一気にやるローカルツール。
+
+- 情報源: デジタル庁 Jグランツ公開 API（無料・認証不要）+ Codex のライブ Web 検索（自治体・財団系）
+- 判断と執筆: Codex サブスク（`codex` CLI）。有料 API は一切使わない
+- 成果物: `~/Desktop/補助金申請/<日付>_<補助金名>/` に原本・作成書類・チェックリスト
+
+## 使い方
+
+```bash
+cd GrantHunter
+npm install
+npm run build
+node bin/cli.js        # http://localhost:4611
+```
+
+1. **プロフィール** タブに事業と生活のことを書いて保存（ここが唯一の判断材料）
+2. **今日の提案** タブで「今すぐリサーチ」。数分で適合スコア付きの提案が並ぶ
+3. 出したいものは「出す（書類を作る）」。合わないものは「見送り」（二度と出てこない）
+4. **申請フォルダ** タブで進行を見る。完了したら「フォルダを開く」
+
+## 申請フォルダの中身
+
+```
+20260902_○○補助金/
+├── 00_申請者情報.md        プロフィールのコピー
+├── 案件概要.md             制度の要点・締切・URL
+├── 01_募集要項/            公式 PDF
+├── 02_交付要綱/            公式 PDF
+├── 03_申請様式_原本/        Word / Excel / PDF（zip は展開済み）
+└── 04_作成書類/
+    ├── 記入済_様式○○.docx   書式に沿って埋めたもの（python-docx / openpyxl）
+    ├── 事業計画書.md         審査項目を見出しにした計画書
+    ├── 経費明細.md
+    ├── チェックリスト.md     提出書類・締切・提出方法・スケジュール
+    ├── 要確認事項.md         本人にしか埋められない項目の質問リスト
+    └── README.md
+```
+
+プロフィールに無い事実は捏造せず **【要確認: ○○】** で残る仕様。提出前に `要確認事項.md` を埋めること。
+
+## 毎日自動で動かす
+
+アプリが起動している間は、設定タブの時刻に 1 日 1 回リサーチが走り、macOS 通知が出る。
+ログイン時に常駐させるには:
+
+```bash
+bash scripts/install-launchd.sh          # 登録
+bash scripts/install-launchd.sh remove   # 解除
+```
+
+cron 等から叩く場合は `node scripts/daily.mjs`（サーバーが無ければ起動してから実行し、結果をターミナルに出す）。
+
+## 任意: Jグランツ MCP サーバー
+
+デジタル庁公式の [jgrants-mcp-server](https://github.com/digital-go-jp/jgrants-mcp-server) を codex に登録すると、書類作成フェーズで codex が添付資料の Markdown 変換などに使える。必須ではない。
+
+```bash
+bash scripts/setup-jgrants-mcp.sh
+```
+
+## データの置き場
+
+| 場所 | 内容 |
+|---|---|
+| `~/.granthunter-data/profile.md` | プロフィール |
+| `~/.granthunter-data/settings.json` | 設定・検索キーワード |
+| `~/.granthunter-data/proposals/YYYY-MM-DD.json` | 日ごとの提案 |
+| `~/.granthunter-data/scores.json` | 採点キャッシュ（プロフィール変更で再採点） |
+| `~/.granthunter-data/decisions.json` | 出す／見送りの記録 |
+| `~/Desktop/補助金申請/` | 申請フォルダ（`GRANTHUNTER_APPS_ROOT` で変更可） |
+
+## 注意
+
+- 提案・書類は AI の下書き。**要件の最終確認と提出は必ず本人が行う**
+- 締切・補助率は Jグランツの掲載値。公式ページで再確認すること
+- 生活系（子育て・住宅など）は Jグランツに載りにくいため Web 調査に依存する。URL は必ず公式ドメインか確認する

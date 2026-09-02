@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f5ef;
+  --foreground: #1d1b16;
+  --card: #ffffff;
+  --line: #e2ddd0;
+  --accent: #1f5f4a;
+  --accent-soft: #e4f0ea;
+  --muted: #6b665a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #14130f;
+    --foreground: #eae6da;
+    --card: #1e1c17;
+    --line: #34312a;
+    --accent: #7fc9a8;
+    --accent-soft: #1f3a2f;
+    --muted: #a39d8e;
+  }
+}
+
+html {
+  font-size: 17px;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", system-ui, sans-serif;
+  line-height: 1.9;
+  letter-spacing: 0.04em;
+}
+
+h1, h2, h3 {
+  letter-spacing: 0.05em;
+  line-height: 1.5;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.6em 1.2em;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.btn-ghost { background: transparent; }
+
+.tab {
+  padding: 0.7em 1.3em;
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  cursor: pointer;
+}
+.tab.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15em 0.7em;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+textarea, input, select {
+  font-size: 1rem;
+  line-height: 1.8;
+  letter-spacing: 0.03em;
+  padding: 0.7em 0.9em;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--foreground);
+  width: 100%;
+}
+
+.log {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  letter-spacing: 0;
+  white-space: pre-wrap;
+  background: var(--accent-soft);
+  border-radius: 10px;
+  padding: 0.9em 1.1em;
+  max-height: 22rem;
+  overflow: auto;
+}
+
+.muted { color: var(--muted); }
