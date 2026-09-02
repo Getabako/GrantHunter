@@ -23,6 +23,111 @@ function untilDeadline(iso: string | null) {
   return `${date}（あと${days}日）`;
 }
 
+// 初回設定フォーム: 質問に答えるとプロフィール（markdown）を組み立てる
+const FORM_FIELDS: { key: string; label: string; hint: string; section: "事業" | "生活" | "希望"; rows?: number; required?: boolean }[] = [
+  { key: "name", label: "事業者名（屋号・法人名）", hint: "個人で生活系だけ探す場合は氏名やニックネームで可", section: "事業", required: true },
+  { key: "entity", label: "法人 / 個人事業主 / 会社員・その他", hint: "例: 個人事業主", section: "事業", required: true },
+  { key: "pref", label: "都道府県", hint: "例: 秋田県", section: "事業", required: true },
+  { key: "city", label: "市区町村", hint: "例: 秋田市", section: "事業" },
+  { key: "industry", label: "業種・主なサービス", hint: "例: 学習塾、Web制作、飲食店、農業", section: "事業", required: true },
+  { key: "founded", label: "創業年", hint: "例: 2019年", section: "事業" },
+  { key: "employees", label: "従業員数（役員含む）", hint: "例: 3人（うちパート2人）", section: "事業" },
+  { key: "sales", label: "直近年度の売上規模", hint: "例: 約800万円", section: "事業" },
+  { key: "plans", label: "今後1〜2年でやりたいこと", hint: "設備投資・新事業・採用・販路開拓・IT導入など。具体的なほど提案が良くなります", section: "事業", rows: 4, required: true },
+  { key: "cash", label: "使える自己資金の目安", hint: "補助金は後払いが多いので立替可能額", section: "事業" },
+  { key: "past", label: "過去に採択された補助金・受給中の助成金", hint: "重複申請の判定に使います", section: "事業" },
+  { key: "family", label: "家族構成", hint: "例: 配偶者、子ども2人（5歳・8歳）", section: "生活" },
+  { key: "home", label: "住まい", hint: "持ち家/賃貸、築年数、リフォーム・省エネ改修の予定", section: "生活" },
+  { key: "life", label: "その他の生活の予定", hint: "車の買い替え、進学、介護、移住、資格取得など", section: "生活", rows: 3 },
+  { key: "prefer", label: "優先したいテーマ", hint: "例: IT導入を最優先、生活系は子育て関連のみ", section: "希望" },
+  { key: "avoid", label: "避けたいもの", hint: "例: 事務負担が重いもの、立替が大きいもの", section: "希望" },
+  { key: "time", label: "申請にかけられる時間の目安", hint: "例: 月に数時間", section: "希望" },
+];
+
+function buildProfileMarkdown(v: Record<string, string>): string {
+  const line = (label: string, key: string) => `- ${label}: ${(v[key] || "").trim() || "（未記入）"}`;
+  const sections: Record<string, string[]> = { 事業: [], 生活: [], 希望: [] };
+  for (const f of FORM_FIELDS) {
+    if (f.key === "pref" || f.key === "city") continue;
+    sections[f.section].push(line(f.label, f.key));
+  }
+  sections["事業"].splice(2, 0, `- 所在地: ${[v.pref, v.city].filter(Boolean).join(" ")}`);
+  return [
+    "# 申請者プロフィール",
+    "",
+    "このファイルが「補助金の合う・合わない」を判断する唯一の材料です。自由に追記・修正して構いません。",
+    "",
+    "## 事業",
+    "",
+    ...sections["事業"],
+    "",
+    "## 生活・家族",
+    "",
+    ...sections["生活"],
+    "",
+    "## 補助金に対する希望",
+    "",
+    ...sections["希望"],
+    "",
+  ].join("\n");
+}
+
+function Onboarding({ onDone }: { onDone: () => void }) {
+  const [v, setV] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const missing = FORM_FIELDS.filter((f) => f.required && !(v[f.key] || "").trim());
+
+  async function submit() {
+    if (missing.length) return;
+    setSaving(true);
+    await fetch("/api/profile", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ profile: buildProfileMarkdown(v) }) });
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prefectures: [v.pref.trim()], keywords: [], onboarded: true }),
+    });
+    setSaving(false);
+    onDone();
+  }
+
+  return (
+    <section className="space-y-6">
+      <div className="card px-6 py-5">
+        <h2 className="text-2xl font-bold mb-2">はじめに、あなたのことを教えてください</h2>
+        <p>
+          ここに書いた内容だけを材料に、AI が「合う補助金」を毎日選び、申請書類を作ります。
+          正直に・具体的に書くほど精度が上がります。内容はこの PC の中だけで使われ、Codex への送信以外には出ません。あとから「プロフィール」タブで自由に書き換えられます。
+        </p>
+      </div>
+      {(["事業", "生活", "希望"] as const).map((sec) => (
+        <div key={sec} className="card px-6 py-5 space-y-4">
+          <h3 className="text-xl font-bold">{sec === "事業" ? "事業のこと" : sec === "生活" ? "生活・家族のこと（任意）" : "補助金への希望（任意）"}</h3>
+          {FORM_FIELDS.filter((f) => f.section === sec).map((f) => (
+            <label key={f.key} className="block">
+              <div className="font-semibold">
+                {f.label}
+                {f.required && <span className="muted font-normal text-sm"> （必須）</span>}
+              </div>
+              <div className="muted text-sm mb-1">{f.hint}</div>
+              {f.rows ? (
+                <textarea rows={f.rows} value={v[f.key] || ""} onChange={(e) => setV({ ...v, [f.key]: e.target.value })} />
+              ) : (
+                <input value={v[f.key] || ""} onChange={(e) => setV({ ...v, [f.key]: e.target.value })} />
+              )}
+            </label>
+          ))}
+        </div>
+      ))}
+      <div className="flex flex-wrap items-center gap-4">
+        <button className="btn btn-primary" disabled={saving || missing.length > 0} onClick={submit}>
+          保存してはじめる
+        </button>
+        {missing.length > 0 && <span className="muted">必須: {missing.map((m) => m.label).join("、")}</span>}
+      </div>
+    </section>
+  );
+}
+
 export default function Page() {
   const [tab, setTab] = useState<Tab>("proposals");
   const [day, setDay] = useState<ProposalDay | null>(null);
@@ -34,6 +139,8 @@ export default function Page() {
   const [busy, setBusy] = useState<string | null>(null);
   const [openLog, setOpenLog] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [forceForm, setForceForm] = useState(false);
+  const showForm = !!settings && (!settings.onboarded || forceForm);
 
   const load = useCallback(async () => {
     const [p, j, a, s, pr] = await Promise.all([
@@ -135,7 +242,19 @@ export default function Page() {
 
       {toast && <div className="card px-5 py-3 mb-5 border-l-4" style={{ borderLeftColor: "var(--accent)" }}>{toast}</div>}
 
-      {tab === "proposals" && (
+      {showForm ? (
+        <Onboarding
+          onDone={() => {
+            setForceForm(false);
+            setProfileDirty(false);
+            setTab("proposals");
+            say("プロフィールを保存しました。「今すぐリサーチ」で最初の提案を作れます");
+            load();
+          }}
+        />
+      ) : null}
+
+      {!showForm && tab === "proposals" && (
         <section className="space-y-5">
           <div className="card px-5 py-4 flex flex-wrap items-center gap-4 justify-between">
             <div>
@@ -197,7 +316,7 @@ export default function Page() {
         </section>
       )}
 
-      {tab === "applications" && (
+      {!showForm && tab === "applications" && (
         <section className="space-y-4">
           <div className="card px-5 py-4 flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -238,7 +357,7 @@ export default function Page() {
         </section>
       )}
 
-      {tab === "profile" && (
+      {!showForm && tab === "profile" && (
         <section className="space-y-4">
           <div className="card px-5 py-4">
             「合う・合わない」はこの文章だけで判断します。事業のことも生活のことも、具体的に書くほど提案が良くなります。内容はこの PC の中だけで使われます（Codex サブスクへの送信のみ）。
@@ -255,12 +374,15 @@ export default function Page() {
             <button className="btn btn-primary" onClick={saveProfile} disabled={!profileDirty || busy === "profile"}>
               保存する
             </button>
+            <button className="btn btn-ghost" onClick={() => setForceForm(true)}>
+              フォームで入力し直す
+            </button>
             {profileDirty && <span className="muted self-center">未保存の変更があります</span>}
           </div>
         </section>
       )}
 
-      {tab === "settings" && settings && (
+      {!showForm && tab === "settings" && settings && (
         <section className="space-y-4">
           <div className="card px-6 py-5 space-y-5">
             <label className="flex items-center gap-3">

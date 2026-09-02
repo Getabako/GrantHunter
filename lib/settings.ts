@@ -6,7 +6,7 @@ import type { Settings, Decision, Score } from "./types";
 export const DEFAULT_SETTINGS: Settings = {
   dailyEnabled: true,
   dailyTime: "07:30",
-  prefectures: ["秋田県"],
+  prefectures: [],
   keywords: [],
   keywordsProfileHash: "",
   minScore: 55,
@@ -15,6 +15,7 @@ export const DEFAULT_SETTINGS: Settings = {
   model: "gpt-5.5",
   notifyMac: true,
   lastRunAt: null,
+  onboarded: false,
 };
 
 export const DEFAULT_PROFILE = `# 申請者プロフィール
@@ -26,8 +27,8 @@ export const DEFAULT_PROFILE = `# 申請者プロフィール
 
 - 事業者名（屋号・法人名）:
 - 法人 / 個人事業主:
-- 所在地（都道府県・市区町村）: 秋田県
-- 業種: 教育（プログラミング・AI教室）、Web制作・AI導入支援
+- 所在地（都道府県・市区町村）:
+- 業種:
 - 創業年:
 - 従業員数（役員含む）:
 - 直近年度の売上規模:

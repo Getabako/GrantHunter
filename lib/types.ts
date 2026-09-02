@@ -82,6 +82,7 @@ export type Settings = {
   model: string;
   notifyMac: boolean;
   lastRunAt: string | null;
+  onboarded: boolean; // 初回プロフィール入力済み
 };
 
 export type ApplicationStatus = {

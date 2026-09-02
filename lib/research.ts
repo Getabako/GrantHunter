@@ -204,6 +204,7 @@ export async function runResearch(trigger: "manual" | "daily" = "manual"): Promi
   job.phase = "開始";
   try {
     const settings = getSettings();
+    if (!settings.onboarded) throw new Error("先にプロフィールを入力してください（画面の初回設定フォーム）");
     const hash = profileHash();
     log(`リサーチ開始（${trigger === "daily" ? "定時" : "手動"}）`);
 
