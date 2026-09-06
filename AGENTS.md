@@ -23,7 +23,10 @@
 - `lib/research.ts` — キーワード生成 → 検索 → Web 追加調査 → 採点 → `proposals/YYYY-MM-DD.json`
 - `lib/apply.ts` — 申請フォルダ作成 → 添付保存・zip 展開 → Codex に書類作成させる（バックグラウンド、状態は `<folder>/.granthunter.json`）
 - `lib/settings.ts` — settings / profile / decisions / scores の読み書き
-- `app/page.tsx` — 1 ページ 4 タブ（提案・申請フォルダ・プロフィール・設定）
+- `lib/programs/` — 「質問に答えて応募書類を作る」型プログラムのテンプレート（`types.ts` / `ashioto2026.ts` / `index.ts`）。ASHIOTO -足音- 2026 の 28 問・審査観点・assist / review / judge プロンプトを収録（旧 AshiotoDoc を統合）
+- `lib/entries.ts` — 応募回答の保存（`entries/<programId>/<id>.json`、旧 `~/.ashioto-doc/documents` を初回取り込み）、AI ジョブ（globalThis のジョブ表を 3 秒ポーリング）、申請フォルダへの書き出し
+- `app/programs-tab.tsx` — 「プログラム応募」タブの UI（セクション別フォーム・必須進捗・条件表示・AI 補完・採択レビュー・審査員採点・書き出し）
+- `app/page.tsx` — 1 ページ 5 タブ（提案・申請フォルダ・プログラム応募・プロフィール・設定）
 - `scripts/daily.mjs` — 外部から定時実行するためのスクリプト
 - `scripts/install-launchd.sh` — macOS 常駐化
 - `scripts/setup-jgrants-mcp.sh` — 公式 MCP サーバーを codex に登録（任意）

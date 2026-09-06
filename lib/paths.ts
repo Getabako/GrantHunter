@@ -19,7 +19,16 @@ export const paths = {
   subsidies: path.join(ROOT, "subsidies"),
   proposals: path.join(ROOT, "proposals"),
   logs: path.join(ROOT, "logs"),
+  entries: path.join(ROOT, "entries"),
   appsRoot: APPS_ROOT,
+  /** 旧 AshiotoDoc の保存先（初回のみ取り込む） */
+  legacyAshiotoDocs: path.join(process.env.ASHIOTO_DATA_ROOT ?? path.join(os.homedir(), ".ashioto-doc"), "documents"),
+  entryDir(programId: string) {
+    return path.join(ROOT, "entries", programId);
+  },
+  entryFile(programId: string, id: string) {
+    return path.join(ROOT, "entries", programId, `${id}.json`);
+  },
   proposalFile(date: string) {
     return path.join(ROOT, "proposals", `${date}.json`);
   },
@@ -33,7 +42,7 @@ export function ensureDir(p: string) {
 }
 
 export function ensureAll() {
-  for (const p of [paths.root, paths.subsidies, paths.proposals, paths.logs, paths.appsRoot]) {
+  for (const p of [paths.root, paths.subsidies, paths.proposals, paths.logs, paths.entries, paths.appsRoot]) {
     ensureDir(p);
   }
 }

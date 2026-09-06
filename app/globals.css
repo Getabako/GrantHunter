@@ -119,3 +119,8 @@ textarea, input, select {
 }
 
 .muted { color: var(--muted); }
+
+/* プログラム応募タブの AI 結果（最小マークダウン表示） */
+.md-lite h3 { font-size: 1.15rem; font-weight: 700; margin: 1.1em 0 0.3em; }
+.md-lite h3:first-child { margin-top: 0; }
+.md-lite h4 { font-size: 1.02rem; font-weight: 700; margin: 0.9em 0 0.2em; }

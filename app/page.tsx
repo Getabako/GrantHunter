@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { ProposalDay, Proposal, ApplicationStatus, Settings, ResearchJob } from "@/lib/types";
+import { ProgramsTab } from "./programs-tab";
 
-type Tab = "proposals" | "applications" | "profile" | "settings";
+type Tab = "proposals" | "applications" | "programs" | "profile" | "settings";
 
 function yen(n: number | null) {
   if (n == null) return "上限不明";
@@ -229,6 +230,7 @@ export default function Page() {
           [
             ["proposals", "今日の提案"],
             ["applications", "申請フォルダ"],
+            ["programs", "プログラム応募"],
             ["profile", "プロフィール"],
             ["settings", "設定"],
           ] as [Tab, string][]
@@ -328,7 +330,7 @@ export default function Page() {
               </button>
             )}
           </div>
-          {apps.length === 0 && <div className="card px-6 py-8 text-center muted">まだ申請フォルダはありません。「今日の提案」で「出す」を押すとここに並びます。</div>}
+          {apps.length === 0 && <div className="card px-6 py-8 text-center muted">まだ申請フォルダはありません。「今日の提案」で「出す」を押すか、「プログラム応募」から書き出すとここに並びます。</div>}
           {apps.map((a) => (
             <article key={a.folder} className="card px-6 py-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -356,6 +358,8 @@ export default function Page() {
           ))}
         </section>
       )}
+
+      {!showForm && tab === "programs" && <ProgramsTab say={say} onExported={load} />}
 
       {!showForm && tab === "profile" && (
         <section className="space-y-4">

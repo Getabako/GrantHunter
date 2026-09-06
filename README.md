@@ -40,6 +40,17 @@ node bin/cli.js        # http://localhost:4611
 
 プロフィールに無い事実は捏造せず **【要確認: ○○】** で残る仕様。提出前に `要確認事項.md` を埋めること。
 
+## プログラム応募（ASHIOTO 2026 など）
+
+補助金のリサーチとは別に、**質問に答えて応募書類を作る**タイプの制度は「プログラム応募」タブで扱う（旧 AshiotoDoc の機能を統合）。現在は ASHIOTO -足音- 2026（秋田イノベーション・プログラム）のエントリーフォーム 28 問に対応。
+
+1. **プログラム応募** タブで「新しく作る」。回答は入力のたびに自動保存
+2. 審査対象の自由記述には「AIで補完・ブラッシュアップ」。下書き（空でも可）と他の回答・プロフィールを材料に回答案を作り、「この内容を採用」で反映
+3. 「採択レビュー」で A/B/C 判定と改善提案、「審査員採点」で 7 軸 100 点満点の採点
+4. 「申請フォルダに書き出す」で `~/Desktop/補助金申請/<日付>_ASHIOTO2026_<プロジェクト名>/04_作成書類/ASHIOTO応募書類.md`（レビュー・採点済みなら `採択レビュー.md` `審査員採点.md` も）を作り、**申請フォルダ** タブに並ぶ
+
+回答の保存先は `~/.granthunter-data/entries/<programId>/<id>.json`。旧 AshiotoDoc の `~/.ashioto-doc/documents/*.json` があれば初回に自動で取り込む（元ファイルは消さない）。別のプログラムを足すときは `lib/programs/` にテンプレートを 1 ファイル追加して `index.ts` に登録する。
+
 ## 毎日自動で動かす
 
 アプリが起動している間は、設定タブの時刻に 1 日 1 回リサーチが走り、macOS 通知が出る。
@@ -69,6 +80,7 @@ bash scripts/setup-jgrants-mcp.sh
 | `~/.granthunter-data/proposals/YYYY-MM-DD.json` | 日ごとの提案 |
 | `~/.granthunter-data/scores.json` | 採点キャッシュ（プロフィール変更で再採点） |
 | `~/.granthunter-data/decisions.json` | 出す／見送りの記録 |
+| `~/.granthunter-data/entries/<programId>/` | プログラム応募（ASHIOTO 等）の回答 |
 | `~/Desktop/補助金申請/` | 申請フォルダ（`GRANTHUNTER_APPS_ROOT` で変更可） |
 
 ## 注意
