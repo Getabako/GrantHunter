@@ -176,7 +176,7 @@ cat > "$LAUNCHER" <<'ASHEOS'
 cd "$(dirname "$0")"
 [[ -x /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
 [[ -x /usr/local/bin/brew ]] && eval "$(/usr/local/bin/brew shellenv)"
-exec node bin/cli.js
+exec bash ashura-start.sh
 ASHEOS
 chmod +x "$LAUNCHER"
 green "✓ 次回からはインストール先フォルダの「Grant Hunterを起動.command」をダブルクリックするだけで起動できます" 2>/dev/null || echo "✓ 次回からは「Grant Hunterを起動.command」をダブルクリックするだけで起動できます"

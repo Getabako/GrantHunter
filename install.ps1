@@ -150,7 +150,7 @@ try { & ([scriptblock]::Create((iwr -useb https://service.if-juku.net/Ashura/ins
 
 # ダブルクリック起動ファイルを設置（次回からはこのファイルを開くだけで起動できる）
 $LauncherPath = Join-Path $InstallDir "Grant Hunterを起動.bat"
-$LauncherBody = "@echo off`r`ncd /d `"%~dp0`"`r`nnode bin\cli.js`r`npause"
+$LauncherBody = "@echo off`r`ncd /d `"%~dp0`"`r`npowershell -NoProfile -ExecutionPolicy Bypass -File ashura-start.ps1`r`npause"
 Set-Content -Path $LauncherPath -Value $LauncherBody
 Write-Host "✓ 次回からはインストール先フォルダの「Grant Hunterを起動.bat」をダブルクリックするだけで起動できます" -ForegroundColor Green
 

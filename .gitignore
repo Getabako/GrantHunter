@@ -4,3 +4,6 @@ node_modules
 *.log
 .DS_Store
 tsconfig.tsbuildinfo
+
+# アシュラ起動スクリプトの状態（pid / url / log）
+.ashura/
