@@ -47,6 +47,13 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) { Fail "Node.js が�
 $major = [int]((node -p "process.versions.node.split('.')[0]") 2>$null)
 if ($major -lt 20) { Fail "Node.js 20 以上が必要です（現在 $(node -v)）。"; exit 1 }
 if (-not (Get-Command codex -ErrorAction SilentlyContinue)) { Write-Host "  注意: codex CLI が見つかりません。画面は開きますが、生成機能には codex が必要です（npm i -g @openai/codex）" }
+# codex は古いと新しいモデル（gpt-5.6-sol 以降）を使えないので、0.150 未満なら自動で更新する
+if (Get-Command codex -ErrorAction SilentlyContinue) {
+  try {
+    $cv = (codex --version 2>$null | Select-String -Pattern "[0-9]+\.[0-9]+" | ForEach-Object { $_.Matches[0].Value } | Select-Object -First 1)
+    if ($cv) { $parts = $cv.Split("."); if ([int]$parts[0] -eq 0 -and [int]$parts[1] -lt 150) { Say "codex を最新に更新しています（新しいAIモデルに対応するため）…"; npm i -g @openai/codex@latest | Out-Null } }
+  } catch {}
+}
 
 # 2. 依存（初回のみ）
 if ((Test-Path package.json) -and -not (Test-Path node_modules)) {

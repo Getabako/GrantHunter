@@ -12,7 +12,7 @@ export const DEFAULT_SETTINGS: Settings = {
   minScore: 55,
   maxProposals: 12,
   webResearch: true,
-  model: "gpt-5.5",
+  model: "gpt-5.6-sol",
   notifyMac: true,
   lastRunAt: null,
   onboarded: false,

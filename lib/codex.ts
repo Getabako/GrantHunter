@@ -17,7 +17,7 @@ export type CodexOptions = {
   onLog?: (line: string) => void;
 };
 
-const DEFAULT_MODEL = process.env.GRANTHUNTER_MODEL || "gpt-5.5";
+const DEFAULT_MODEL = process.env.GRANTHUNTER_MODEL || "gpt-5.6-sol";
 
 /** codex exec を1回走らせ、最終メッセージを文字列で返す */
 export async function codexRun(prompt: string, opts: CodexOptions = {}): Promise<string> {

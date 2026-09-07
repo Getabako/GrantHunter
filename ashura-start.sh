@@ -61,6 +61,15 @@ fi
 MAJOR="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
 if [ "$MAJOR" -lt 20 ]; then fail "Node.js 20 以上が必要です（現在 $(node -v)）。更新してから再実行してください。"; exit 1; fi
 command -v codex >/dev/null 2>&1 || echo "  注意: codex CLI が見つかりません。画面は開きますが、生成機能には codex が必要です（brew install codex または npm i -g @openai/codex）"
+# codex は古いと新しいモデル（gpt-5.6-sol 以降）を使えないので、0.150 未満なら自動で更新する
+if command -v codex >/dev/null 2>&1; then
+  CV="$(codex --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)"
+  CMAJ="${CV%%.*}"; CMIN="${CV#*.}"
+  if [ "${CMAJ:-0}" -eq 0 ] && [ "${CMIN:-0}" -lt 150 ]; then
+    say "codex を最新に更新しています（新しいAIモデルに対応するため）…"
+    npm i -g @openai/codex@latest >/dev/null 2>&1 || brew upgrade codex >/dev/null 2>&1 || true
+  fi
+fi
 
 # 2. 依存パッケージ（初回のみ）
 if [ -f package.json ] && [ ! -d node_modules ]; then
