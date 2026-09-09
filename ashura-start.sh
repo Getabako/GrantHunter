@@ -18,23 +18,6 @@ SELF_OPENS=0       # 1 = サーバー自身がブラウザを開くので二重�
 STATE_DIR=".ashura"; mkdir -p "$STATE_DIR"
 LOG="$STATE_DIR/server.log"; PIDF="$STATE_DIR/server.pid"; URLF="$STATE_DIR/server.url"
 
-# --- ASHURA_VERSION_BLOCK: 版の表示（お使いの版 / 最新の版 / 更新内容）------------------
-# 会員が「今どの版を使っているのか」分からないまま使い続けないよう、起動のたびに出す。
-# 文章はサーバーが組み立てて返す。取れなければ黙って飛ばす（起動は絶対に止めない）。
-ART_ID="grant-hunter"
-ashura_show_version() {
-  command -v curl >/dev/null 2>&1 || return 0
-  local mine=""
-  [ -f "$STATE_DIR/version.txt" ] && mine="$(tr -d '\r\n' < "$STATE_DIR/version.txt" | cut -c1-40)"
-  local txt
-  txt="$(curl -fsS --max-time 6 "https://service.if-juku.net/api/ashura/versions?id=${ART_ID}&have=${mine}&format=text" 2>/dev/null)" || return 0
-  [ -z "$txt" ] && return 0
-  echo ""
-  printf '%s\n' "$txt"
-}
-ashura_show_version
-# --- ASHURA_VERSION_BLOCK ここまで ------------------------------------------------------
-
 say()  { printf "\033[36m▶ %s\033[0m\n" "$*"; }
 ok()   { printf "\033[32m✓ %s\033[0m\n" "$*"; }
 fail() { printf "\033[31m✗ %s\033[0m\n" "$*" >&2; }
@@ -68,6 +51,73 @@ if alive && [ -s "$URLF" ] && responds "$(cat "$URLF")"; then
   exit 0
 fi
 rm -f "$PIDF" "$URLF"
+
+# --- ASHURA_VERSION_BLOCK: 版の確認と自動更新 --------------------------------------------
+# 起動のたびに手元の版と最新版を照らし合わせ、更新があればその場で取り込む。
+# 会員が手を加えた所は 3方向マージで残す（インストーラと同じヘルパーを使う）。
+# 何が起きても起動は止めない。更新したくない人は ASHURA_NO_UPDATE=1 を付けて実行する。
+ART_ID="grant-hunter"
+ASHURA_API="https://service.if-juku.net/api/ashura/versions"
+ashura_api() { curl -fsS --max-time 8 "$ASHURA_API?id=$ART_ID&$1" 2>/dev/null; }
+
+# zip の展開。macOS の unzip は日本語のファイル名を落として異常終了するので、
+# まず ditto を使う（ashura くんの画像など、名前が日本語のファイルがある奥義がある）
+ashura_unzip() { # $1=zip $2=展開先
+  mkdir -p "$2"
+  if [ "$(uname)" = "Darwin" ] && command -v ditto >/dev/null 2>&1; then
+    ditto -x -k "$1" "$2" 2>/dev/null && return 0
+  fi
+  unzip -qq -O UTF-8 "$1" -d "$2" >/dev/null 2>&1 && return 0
+  unzip -qq "$1" -d "$2" >/dev/null 2>&1 && return 0
+  [ -n "$(ls -A "$2" 2>/dev/null)" ]
+}
+
+ashura_self_update() {
+  if [ "$(uname)" != "Darwin" ] && ! command -v unzip >/dev/null 2>&1; then
+    fail "unzip が無いため自動更新できません。配布ページのコマンドで更新してください"; return 0
+  fi
+  say "最新版に更新しています（あなたが手を加えた所は残します）…"
+  local t; t="$(mktemp -d)" || return 0
+  if ! curl -fsSL --max-time 600 -o "$t/app.zip" "https://service.if-juku.net/api/ashura/download/$ART_ID"; then
+    fail "更新版を取得できませんでした。今の版のまま起動します"; rm -rf "$t"; return 0
+  fi
+  if ! ashura_unzip "$t/app.zip" "$t/src"; then
+    fail "更新版を開けませんでした。今の版のまま起動します"; rm -rf "$t"; return 0
+  fi
+  local src; src="$(find "$t/src" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+  if [ -z "$src" ]; then fail "更新版の中身が見つかりません。今の版のまま起動します"; rm -rf "$t"; return 0; fi
+  # 聞かれて手が止まらないよう、必ず非対話で走らせる（迷ったら会員のファイルを残す側に倒れる）
+  if ! curl -fsSL --max-time 30 -o "$t/merge.sh" "https://service.if-juku.net/Ashura/installers/lib/merge-update.sh" \
+     || ! bash "$t/merge.sh" "$src" "$PWD" "$t/app.zip" < /dev/null; then
+    fail "更新の取り込みに失敗しました。今の版のまま起動します（配布ページのコマンドで更新できます）"
+    rm -rf "$t"; return 0
+  fi
+  ashura_api "format=sha" > "$STATE_DIR/version.txt" 2>/dev/null || true
+  rm -rf "$t"
+  ok "最新版に更新しました"
+  # 更新で必要な部品が変わっていることがあるので、package.json が新しければ入れ直す
+  if [ -f package.json ] && [ -d node_modules ] && [ package.json -nt node_modules ]; then
+    say "部品（依存パッケージ）を入れ直しています…"
+    if [ -f pnpm-lock.yaml ] && command -v pnpm >/dev/null 2>&1; then pnpm install >/dev/null 2>&1 || true
+    else npm install >/dev/null 2>&1 || true; fi
+  fi
+}
+
+ashura_version_check() {
+  command -v curl >/dev/null 2>&1 || return 0
+  local mine=""
+  [ -f "$STATE_DIR/version.txt" ] && mine="$(tr -d '\r\n' < "$STATE_DIR/version.txt" | cut -c1-40)"
+  local txt; txt="$(ashura_api "have=$mine&format=text")" || return 0
+  if [ -n "$txt" ]; then echo ""; printf '%s\n' "$txt"; fi
+  local st; st="$(ashura_api "have=$mine&format=status")" || return 0
+  [ "$st" = "update" ] || return 0
+  if [ -n "${ASHURA_NO_UPDATE:-}" ]; then
+    echo "  （自動更新は切ってあります。ASHURA_NO_UPDATE を外すと自動で更新します）"; return 0
+  fi
+  ashura_self_update
+}
+ashura_version_check
+# --- ASHURA_VERSION_BLOCK ここまで ------------------------------------------------------
 
 # 1. Node.js
 if ! command -v node >/dev/null 2>&1; then

@@ -17,21 +17,6 @@ $SelfOpens = 0
 # (追加の環境変数なし)
 
 $StateDir = ".ashura"; New-Item -ItemType Directory -Force -Path $StateDir | Out-Null
-
-# --- ASHURA_VERSION_BLOCK: 版の表示（お使いの版 / 最新の版 / 更新内容）------------------
-$ArtId = "grant-hunter"
-function Show-AshuraVersion {
-  try {
-    $mine = ""
-    $vf = Join-Path $StateDir "version.txt"
-    if (Test-Path $vf) { $mine = (Get-Content $vf -Raw).Trim() }
-    $url = "https://service.if-juku.net/api/ashura/versions?id=$ArtId&have=$mine&format=text"
-    $txt = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 6 -Uri $url).Content
-    if ($txt) { Write-Host ""; Write-Host $txt }
-  } catch { }
-}
-Show-AshuraVersion
-# --- ASHURA_VERSION_BLOCK ここまで ------------------------------------------------------
 $Log  = Join-Path $StateDir "server.log"
 $PidF = Join-Path $StateDir "server.pid"
 $UrlF = Join-Path $StateDir "server.url"
@@ -56,6 +41,45 @@ Write-Host ""; Write-Host "=================================================="; 
 # 0. 起動済みならブラウザを開くだけ
 if ((Alive) -and (Test-Path $UrlF)) { $u = (Get-Content $UrlF).Trim(); if ($u -and (Responds $u)) { Ok "$ToolName は起動済みです: $u"; Start-Process $u; Write-Host "ASHURA_URL=$u"; exit 0 } }
 Remove-Item $PidF, $UrlF -ErrorAction SilentlyContinue
+
+# --- ASHURA_VERSION_BLOCK: 版の確認と自動更新 --------------------------------------------
+$ArtId = "grant-hunter"
+$AshuraApi = "https://service.if-juku.net/api/ashura/versions"
+function Ashura-Api($q) {
+  try { return (Invoke-WebRequest -UseBasicParsing -TimeoutSec 8 -Uri ("$AshuraApi" + "?id=$ArtId&" + $q)).Content.Trim() } catch { return "" }
+}
+function Ashura-SelfUpdate {
+  Write-Host "▶ 最新版に更新しています（あなたが手を加えた所は残します）…" -ForegroundColor Cyan
+  $t = Join-Path ([System.IO.Path]::GetTempPath()) ("ashura-" + [guid]::NewGuid().ToString("N"))
+  New-Item -ItemType Directory -Force -Path $t | Out-Null
+  try {
+    $zip = Join-Path $t "app.zip"
+    Invoke-WebRequest -UseBasicParsing -TimeoutSec 600 -Uri "https://service.if-juku.net/api/ashura/download/$ArtId" -OutFile $zip
+    Expand-Archive -Path $zip -DestinationPath (Join-Path $t "src") -Force
+    $src = Get-ChildItem -Directory (Join-Path $t "src") | Select-Object -First 1
+    if (-not $src) { throw "更新版の中身が見つかりません" }
+    $code = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 30 -Uri "https://service.if-juku.net/Ashura/installers/lib/merge-update.ps1").Content
+    & ([scriptblock]::Create($code)) -Src $src.FullName -Dest $PSScriptRoot -Zip $zip
+    $sha = Ashura-Api "format=sha"
+    if ($sha) { Set-Content -NoNewline -Path (Join-Path $StateDir "version.txt") -Value $sha }
+    Write-Host "✓ 最新版に更新しました" -ForegroundColor Green
+  } catch {
+    Write-Host "✗ 更新に失敗しました。今の版のまま起動します（配布ページのコマンドで更新できます）" -ForegroundColor Yellow
+  } finally { Remove-Item -Recurse -Force $t -ErrorAction SilentlyContinue }
+}
+function Show-AshuraVersion {
+  $mine = ""
+  $vf = Join-Path $StateDir "version.txt"
+  if (Test-Path $vf) { $mine = (Get-Content $vf -Raw).Trim() }
+  $txt = Ashura-Api ("have=" + $mine + "&format=text")
+  if ($txt) { Write-Host ""; Write-Host $txt }
+  $st = Ashura-Api ("have=" + $mine + "&format=status")
+  if ($st -eq "update") {
+    if ($env:ASHURA_NO_UPDATE) { Write-Host "  （自動更新は切ってあります）" } else { Ashura-SelfUpdate }
+  }
+}
+Show-AshuraVersion
+# --- ASHURA_VERSION_BLOCK ここまで ------------------------------------------------------
 
 # 1. Node.js
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) { Fail "Node.js が見つかりません。https://nodejs.org から LTS 版を入れて、もう一度実行してください。"; exit 1 }

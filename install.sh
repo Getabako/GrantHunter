@@ -8,6 +8,20 @@
 
 set -e
 
+# --- ASHURA_UNZIP_FIX: zip の展開 ---------------------------------------------
+# macOS の unzip は日本語のファイル名を落として異常終了するので、まず ditto を使う。
+ashura_unzip() { # $1=zip $2=展開先
+  mkdir -p "$2"
+  if [ "$(uname)" = "Darwin" ] && command -v ditto >/dev/null 2>&1; then
+    ditto -x -k "$1" "$2" 2>/dev/null && return 0
+  fi
+  unzip -qq -O UTF-8 "$1" -d "$2" >/dev/null 2>&1 && return 0
+  unzip -qq "$1" -d "$2" >/dev/null 2>&1 && return 0
+  [ -n "$(ls -A "$2" 2>/dev/null)" ]
+}
+# --- ASHURA_UNZIP_FIX ここまで -------------------------------------------------
+
+
 # 更新時は会員のカスタマイズを残す 3方向マージで配置する（ヘルパーはサイトから取得。取得できなければ従来どおり上書きコピー）
 ashura_merge_update() {
   local helper; helper="$(mktemp)"
@@ -95,7 +109,7 @@ cyan "▶ 最新版をダウンロードします"
 TMP_DIR="$(mktemp -d)"
 TMPZIP="$TMP_DIR/app.zip"
 curl -fsSL -o "$TMPZIP" "$ZIP_URL"
-unzip -q "$TMPZIP" -d "$TMP_DIR/unzipped"
+ashura_unzip "$TMPZIP" "$TMP_DIR/unzipped"
 SRC_DIR="$(find "$TMP_DIR/unzipped" -mindepth 1 -maxdepth 1 -type d -name '*-main' | head -n 1)"
 [[ -z "$SRC_DIR" ]] && SRC_DIR="$(find "$TMP_DIR/unzipped" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
 if [[ -z "$SRC_DIR" ]]; then
