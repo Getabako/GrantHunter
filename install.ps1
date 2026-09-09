@@ -154,4 +154,13 @@ $LauncherBody = "@echo off`r`ncd /d `"%~dp0`"`r`npowershell -NoProfile -Executio
 Set-Content -Path $LauncherPath -Value $LauncherBody
 Write-Host "✓ 次回からはインストール先フォルダの「Grant Hunterを起動.bat」をダブルクリックするだけで起動できます" -ForegroundColor Green
 
+# --- ASHURA_VERSION_BLOCK: 入れた版を記録する ------------------------------------------
+try {
+  $vd = Join-Path $InstallDir ".ashura"
+  New-Item -ItemType Directory -Force -Path $vd | Out-Null
+  $sha = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 8 -Uri "https://service.if-juku.net/api/ashura/versions?id=grant-hunter&format=sha").Content.Trim()
+  if ($sha) { Set-Content -NoNewline -Path (Join-Path $vd "version.txt") -Value $sha }
+} catch { }
+# --- ASHURA_VERSION_BLOCK ここまで ------------------------------------------------------
+
 node "$InstallDir\bin\cli.js"

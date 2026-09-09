@@ -181,4 +181,12 @@ ASHEOS
 chmod +x "$LAUNCHER"
 green "✓ 次回からはインストール先フォルダの「Grant Hunterを起動.command」をダブルクリックするだけで起動できます" 2>/dev/null || echo "✓ 次回からは「Grant Hunterを起動.command」をダブルクリックするだけで起動できます"
 
+# --- ASHURA_VERSION_BLOCK: 入れた版を記録する ------------------------------------------
+# 起動時に「お使いの版 / 最新の版」を出すための控え。失敗しても導入は成功しているので止めない。
+if [ -n "${INSTALL_DIR:-}" ]; then
+  mkdir -p "$INSTALL_DIR/.ashura" 2>/dev/null || true
+  curl -fsS --max-time 8 "https://service.if-juku.net/api/ashura/versions?id=grant-hunter&format=sha" > "$INSTALL_DIR/.ashura/version.txt" 2>/dev/null || true
+fi
+# --- ASHURA_VERSION_BLOCK ここまで ------------------------------------------------------
+
 exec node bin/cli.js

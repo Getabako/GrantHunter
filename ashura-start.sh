@@ -18,6 +18,23 @@ SELF_OPENS=0       # 1 = サーバー自身がブラウザを開くので二重�
 STATE_DIR=".ashura"; mkdir -p "$STATE_DIR"
 LOG="$STATE_DIR/server.log"; PIDF="$STATE_DIR/server.pid"; URLF="$STATE_DIR/server.url"
 
+# --- ASHURA_VERSION_BLOCK: 版の表示（お使いの版 / 最新の版 / 更新内容）------------------
+# 会員が「今どの版を使っているのか」分からないまま使い続けないよう、起動のたびに出す。
+# 文章はサーバーが組み立てて返す。取れなければ黙って飛ばす（起動は絶対に止めない）。
+ART_ID="grant-hunter"
+ashura_show_version() {
+  command -v curl >/dev/null 2>&1 || return 0
+  local mine=""
+  [ -f "$STATE_DIR/version.txt" ] && mine="$(tr -d '\r\n' < "$STATE_DIR/version.txt" | cut -c1-40)"
+  local txt
+  txt="$(curl -fsS --max-time 6 "https://service.if-juku.net/api/ashura/versions?id=${ART_ID}&have=${mine}&format=text" 2>/dev/null)" || return 0
+  [ -z "$txt" ] && return 0
+  echo ""
+  printf '%s\n' "$txt"
+}
+ashura_show_version
+# --- ASHURA_VERSION_BLOCK ここまで ------------------------------------------------------
+
 say()  { printf "\033[36m▶ %s\033[0m\n" "$*"; }
 ok()   { printf "\033[32m✓ %s\033[0m\n" "$*"; }
 fail() { printf "\033[31m✗ %s\033[0m\n" "$*" >&2; }

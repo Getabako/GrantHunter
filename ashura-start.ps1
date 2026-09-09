@@ -17,6 +17,21 @@ $SelfOpens = 0
 # (追加の環境変数なし)
 
 $StateDir = ".ashura"; New-Item -ItemType Directory -Force -Path $StateDir | Out-Null
+
+# --- ASHURA_VERSION_BLOCK: 版の表示（お使いの版 / 最新の版 / 更新内容）------------------
+$ArtId = "grant-hunter"
+function Show-AshuraVersion {
+  try {
+    $mine = ""
+    $vf = Join-Path $StateDir "version.txt"
+    if (Test-Path $vf) { $mine = (Get-Content $vf -Raw).Trim() }
+    $url = "https://service.if-juku.net/api/ashura/versions?id=$ArtId&have=$mine&format=text"
+    $txt = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 6 -Uri $url).Content
+    if ($txt) { Write-Host ""; Write-Host $txt }
+  } catch { }
+}
+Show-AshuraVersion
+# --- ASHURA_VERSION_BLOCK ここまで ------------------------------------------------------
 $Log  = Join-Path $StateDir "server.log"
 $PidF = Join-Path $StateDir "server.pid"
 $UrlF = Join-Path $StateDir "server.url"
