@@ -1,4 +1,4 @@
-# Grant Hunter — Windows one-line installer & launcher
+﻿# Grant Hunter — Windows one-line installer & launcher
 #
 # 友達向けの 1 行コマンドは配布ページを参照:
 #   https://service.if-juku.net/Ashura/arts
